@@ -1,95 +1,207 @@
-# battlesnake_nodejs_template 🐍
+# 🟦 Battlesnake TypeScript Template
 
-This is a [Battlesnake](http://play.battlesnake.com) template written in Typescript using the [ExpressJs](https://expressjs.com/en/5x/api.html).
+Template de [Battlesnake](https://play.battlesnake.com) em **TypeScript**, com
+**Express** rodando em **AWS Lambda** com **API Gateway**. O deploy é
+automático: você programa, dá push, e o GitHub Actions devolve a URL da sua cobra.
 
-## Introduction and Objectives ⁉
-The main purpose of this project is to create a template for Battlesnake using Typescript NodeJS. The biggest challenge is to understand how an API works and how to deploy it in AWS Lambda.
+---
 
-![Example](https://github.com/Maua-Dev/battlesnake_fastapi_template/assets/81604963/58080c12-6d91-4366-b4e0-f7cd9f20f98d)
+## 📦 Pré-requisitos
 
-## How to use 🤔
-First of all, you need to create a repo using issues from [Devmaua setup](https://github.com/Maua-Dev/devmaua_setup/), set the **project_name** as "**battlesnake_nodejs_{your name}**" and project template as **battlesnake_nodejs_template** and make sure it's **public** . Hit create issue and wait for the setup to finish.
+- **Node.js 20 ou superior** — [nodejs.org/download](https://nodejs.org/en/download)
+  Confira com `node --version`.
+- Noções básicas de **TypeScript**, **API** e **Lambda**
+- **Disposição, competitividade e força de vontade!**
 
-After that you need to clone your new repo, you need to install the dependecies with **NPM** or **YARN**. Just choose **ONE** of them, to avoid future problems!
+Você **não** precisa instalar Terraform nem AWS CLI: quem cuida do deploy é o CD.
 
-## Installation 👩‍💻
+---
 
-###### create FILE .env:
-    STAGE = TEST
+## 🚀 Como começar
 
+1. Vá até o repositório [**devmaua_setup**](https://github.com/Maua-Dev/devmaua_setup),
+   abra uma **issue** e escolha:
+   - **project_name**: `battlesnake_typescript_{seu nome}`
+   - **project template**: `battlesnake_nodejs_template`
+   - marque o repositório como **público**
 
-#### Install the dependencies
-    npm install
-    or
-    yarn
+2. Aguarde cerca de **1 minuto** e confira em
+   [Repositórios da organização](https://github.com/orgs/Maua-Dev/repositories).
 
+3. Clone e instale:
+   ```bash
+   git clone https://github.com/Maua-Dev/Nome_Do_Seu_Repositorio
+   cd Nome_Do_Seu_Repositorio
+   npm install
+   ```
 
-#### Run the server locally (needs .env -> STAGE = TEST)
+4. Abra [`src/logic.ts`](src/logic.ts) e comece a programar sua cobra 🐍
 
-    npm run start
-    or
-    yarn start
+> Use **npm**, não yarn. O CD roda `npm ci`, que depende do `package-lock.json`.
 
-## The Challenge 🐍
-The challenge is to create a Battlesnake using NodeJs and ExpressJS. The Battlesnake must be deployed in AWS Lambda.
-You can find the documentation for Battlesnake [here](https://docs.battlesnake.com/).
+---
 
-### The files 📁
-The project have one folder: **src**.
-In src, you can find the index.ts file, which is the file that contains the ExpressJS app and the routes. From there, you can create your own routes and functions.
+## 📂 Estrutura do projeto
 
-### The routes 🛣
-The routes are created in the **index.ts** file. You can create your own routes and functions. The routes are created using Express with Typescript, you can find the documentation [here]((https://expressjs.com/en/5x/api.html)). Follow the rules from the Battlesnake documentation to create your routes, they should look like [this](https://docs.battlesnake.com/api).
+```
+.
+├── package.json                # dependências e scripts
+├── tsconfig.json               # configuração do compilador
+├── src
+│   ├── logic.ts                # 👈 É AQUI QUE VOCÊ PROGRAMA
+│   ├── index.ts                # rotas Express + handler da Lambda — não precisa mexer
+│   └── local.ts                # servidor local — não precisa mexer
+├── tests
+│   └── logic.test.ts           # testes da sua lógica
+├── terraform
+│   ├── bootstrap/              # bucket de estado do Terraform
+│   └── app/                    # Lambda + API Gateway
+└── .github/workflows/CD.yaml   # testes + deploy automático
+```
 
-### Attention 🚨
-In order to deploy your Battlesnake in AWS Lambda, you need to follow some rules:
-- The routes must be created using express;
-- ALWAYS test your code before pushing it to the repo. You can use pytest to test your code;
-- Every file should be inside the src folder;
+**Você só precisa de `src/logic.ts`.** Os outros arquivos existem para levar o
+estado do jogo até as suas quatro funções.
 
-### Deploy 🚀
+O `npm run build` compila tudo para `dist/`, preservando as pastas:
+`src/index.ts` vira `dist/src/index.js`, que é o handler configurado na Lambda.
 
-After pushing your code to the repo, it will trigger an action to deploy your code in AWS Lambda. You can find the action in the **.github/workflows/aws_cd.yml** file.
+---
 
-The first time you push your code, the action will create a new stack in AWS CloudFormation. After that, every time you push your code, the action will update the stack with the new code.
+## 🧠 As quatro funções
 
-In the [Actions](https://github.com/Maua-Dev/battlesnake_nodejs_template/actions) tab, you can see the status of the deploy and if it was successful or not. If it was successful, you can find the URL of your API in the outputs tab of the action (in the final part of the "Deploy with CDK" step).
+Todas ficam em `src/logic.ts` e recebem um `GameState` — o tipo está definido no
+próprio arquivo, então o editor te avisa se você errar um nome de campo:
 
-![Action Tab](https://i.imgur.com/VSOPMLw.png)
-![STEP](https://github.com/Maua-Dev/battlesnake_fastapi_template/assets/81604963/6129f465-a54d-46fc-b45a-c8b219a6823b)
+| Função | Rota | Quando é chamada | O que devolve |
+|---|---|---|---|
+| `info()` | `GET /` | ao cadastrar a cobra e no início de cada partida | aparência (cor, cabeça, cauda) |
+| `start(gameState)` | `POST /start` | uma vez, no começo da partida | nada |
+| `move(gameState)` | `POST /move` | **a cada turno** | `{ move: "up" \| "down" \| "left" \| "right" }` |
+| `end(gameState)` | `POST /end` | uma vez, no fim da partida | nada |
 
-There you can find your API URL. You can use this URL to create your Battlesnake in the Battlesnake website. You can find the documentation [here](https://docs.battlesnake.com/guides/getting-started#step-2-create-a-battlesnake).
-You can also find a user and password to access the AWS Console and view the logs of the lambda function to debug it.
+A cobra já vem com a lógica que **impede ela de andar para trás**. A partir daí,
+os `TODO` em `move()` marcam os próximos passos:
 
-![Outputs](https://github.com/Maua-Dev/battlesnake_fastapi_template/assets/81604963/e06bf1dd-18cc-4057-91ea-3ccd8074848f)
+1. não sair do tabuleiro
+2. não bater no próprio corpo
+3. não bater nas cobras adversárias
+4. ir atrás da comida em vez de sortear a direção
 
-To log in to the AWS Console, click on the link named "console" in the output, and then click "Sign in to a different account". There you need to put the account id and the user and password from the outputs tab. On your login, you are required to change your password, DON'T FORGET THE NEW ONE. After that, you can click on the link to the lambda console, and click monitor to find the logs.
+Documentação oficial da API: <https://docs.battlesnake.com/api>
+Exemplo do JSON recebido: <https://docs.battlesnake.com/api/example-move>
 
-![Lambda Console](https://github.com/Maua-Dev/battlesnake_fastapi_template/assets/81604963/8a584df8-9efe-432d-9083-6f3523b7f58c)
-![Cloudwatch Logs](https://github.com/Maua-Dev/battlesnake_fastapi_template/assets/81604963/94483cd1-ae3c-46c0-86df-d8fff0b0490e)
+> ⏱️ Você tem cerca de **500 ms** por jogada. Se estourar, o servidor escolhe
+> uma direção qualquer por você — normalmente para a morte.
 
-After finishing your project, you can delete it from our backend using our CD.
+> 🧭 O tabuleiro tem a origem `(0, 0)` no **canto inferior esquerdo**: `x` cresce
+> para a direita e `y` cresce para cima.
 
-![AwsDestroy](https://i.imgur.com/jDTFeZJ.png)
+---
 
-## Useful tools 🛠
+## 🧪 Testando
 
-- [Postman](https://www.postman.com/) - API development environment
-- [ExpressJs](https://expressjs.com/en/5x/api.html) - API micro-framework Node.js
-- [NodeJs](https://nodejs.org/en/download/package-manager) - Node Documentation
-- [Battlesnake](https://docs.battlesnake.com/) - Battlesnake Documentation
+```bash
+npm test
+```
 
-## Thanks 👢🍿
+O `npm test` compila o TypeScript antes de rodar (script `pretest`) e usa o test
+runner que já vem no Node, sem biblioteca extra. Ele roda a partir de `dist/`,
+onde só existe JavaScript compilado — assim funciona igual no Node 20 do CI e
+na sua máquina.
 
-We hope you like and enjoy it! Thanks!
+O template já vem com testes que garantem que a sua cobra **sempre devolve uma
+direção válida** e **nunca volta por cima do próprio pescoço**, além de testes
+de integração das rotas.
 
-## Contributors 💰🤝💰
+> 🚨 Os testes rodam no GitHub Actions **antes** do deploy. Se algum falhar, o
+> deploy não acontece e a URL da sua cobra não é atualizada.
 
-This project was developed to use inside the Dev. Community Mauá, but feel free to help!.
+### Rodando localmente
 
-- Luca Pinheiro - [LucaPinheiro](https://github.com/LucaPinheiro) 🚀
-- Rodrigo Siqueira - [Rodrigosiq03](https://github.com/Rodrigosiq03) 🧙‍♂️
+```bash
+npm start
+```
 
+Sobe a aplicação em `http://localhost:8000`. Em outro terminal:
 
-## Contact us 📞
-If you have any questions, feel free to contact us! You can find us in our [Discord](https://discord.gg/Yr2VPgAmcb) server.
+```bash
+curl http://localhost:8000/
+```
+
+Dá para ir além e jogar partidas inteiras contra o seu servidor local com a
+[CLI do Battlesnake](https://github.com/BattlesnakeOfficial/rules#installation):
+
+```bash
+battlesnake play -W 11 -H 11 --name minha-cobra --url http://localhost:8000 -g solo --browser
+```
+
+---
+
+## ☁️ Deploy
+
+O deploy é disparado por push na branch **`dev`**:
+
+```bash
+git add .
+git commit -m "minha cobra agora desvia das paredes"
+git push origin dev
+```
+
+O que o CD faz, nessa ordem:
+
+1. **ExecuteTests** — compila o TypeScript e roda os testes
+2. **Bootstrap** — garante o bucket S3 que guarda o estado do Terraform
+3. **build_node** — compila, reinstala só as dependências de produção e
+   empacota `dist/` + `node_modules/` num zip
+4. **deploy_app** — `terraform apply`, criando a Lambda e o API Gateway
+
+No fim, o resumo da execução mostra a **URL da sua cobra** e um link para os
+logs no CloudWatch. Você também encontra a URL no output `api_url_base` do
+passo *Terraform Apply*.
+
+---
+
+## 🎯 Cadastrando no Battlesnake
+
+1. Entre em [play.battlesnake.com](https://play.battlesnake.com)
+2. **My Battlesnakes** → **Create Battlesnake**
+3. No campo **URL**, cole a URL do deploy
+   (algo como `https://abc123.execute-api.us-east-1.amazonaws.com/dev`)
+4. Salve e mande ver nos jogos e desafios!
+
+Se o site reclamar da URL, teste antes no terminal:
+
+```bash
+curl https://SUA_URL_AQUI/
+```
+
+Deve responder o JSON do `info()`.
+
+---
+
+## 📌 Observações
+
+- Toda a lógica da partida vive em `move()`.
+- **Evite adicionar dependências pesadas.** Elas vão inteiras para o zip da
+  Lambda, que tem limite de 50 MB. O pacote atual usa menos de 1 MB.
+- Se instalar algo novo, commite também o `package-lock.json` — é ele que o CD
+  usa no `npm ci`.
+- Os logs ficam no **CloudWatch**, com retenção de 14 dias. Tudo que você
+  escrever com `console.log` aparece lá.
+- A branch de deploy é **`dev`**. Push em outras branches roda só os testes.
+
+---
+
+## 🛠 Ferramentas úteis
+
+- [Battlesnake Docs](https://docs.battlesnake.com/) — documentação da API
+- [Battlesnake CLI](https://github.com/BattlesnakeOfficial/rules) — jogar partidas locais
+- [Express](https://expressjs.com/pt-br/4x/api.html) — o framework das rotas
+- [TypeScript](https://www.typescriptlang.org/docs/) — documentação da linguagem
+- [Postman](https://www.postman.com/) — testar requisições sem terminal
+
+---
+
+## 📞 Fale com a gente
+
+Dúvidas? Chama no [Discord](https://discord.gg/Yr2VPgAmcb) da Dev. Community Mauá.
