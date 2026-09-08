@@ -105,9 +105,13 @@ npm test
 ```
 
 O `npm test` compila o TypeScript antes de rodar (script `pretest`) e usa o test
-runner que já vem no Node, sem biblioteca extra. O template já vem com testes
-que garantem que a sua cobra **sempre devolve uma direção válida** e **nunca
-volta por cima do próprio pescoço**, além de testes de integração das rotas.
+runner que já vem no Node, sem biblioteca extra. Ele roda a partir de `dist/`,
+onde só existe JavaScript compilado — assim funciona igual no Node 20 do CI e
+na sua máquina.
+
+O template já vem com testes que garantem que a sua cobra **sempre devolve uma
+direção válida** e **nunca volta por cima do próprio pescoço**, além de testes
+de integração das rotas.
 
 > 🚨 Os testes rodam no GitHub Actions **antes** do deploy. Se algum falhar, o
 > deploy não acontece e a URL da sua cobra não é atualizada.

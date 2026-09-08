@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc",
     "start": "ts-node src/local.ts",
-    "test": "node --test dist/tests/**/*.test.js",
+    "test": "cd dist && node --test",
     "pretest": "npm run build"
   },
   "engines": {
