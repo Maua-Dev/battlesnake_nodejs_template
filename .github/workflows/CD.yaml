@@ -82,7 +82,11 @@ jobs:
   build_node:
     name: Build Node Application
     runs-on: ubuntu-latest
-    needs: BootstrapBucketCreation
+    # Depende só dos testes, e não do Bootstrap: compilar e empacotar não precisa de AWS.
+    # Assim o build é validado em TODA branch, e não apenas no push para a dev —
+    # um erro aparece antes de qualquer recurso ser criado na AWS, e não depois
+    # de o bucket de estado já existir.
+    needs: ExecuteTests
 
     steps:
       - name: Checkout repository
