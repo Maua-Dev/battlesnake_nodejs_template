@@ -27,7 +27,7 @@ export class LambdaStack extends Construct {
 
     this.nodeModulesLayer = new lambda.LayerVersion(this, `${envs.STACK_NAME}-node-modules-${stage}`, {
       code: lambda.Code.fromAsset(path.join(__dirname, `../dependencies`)),
-      compatibleRuntimes: [lambda.Runtime.NODEJS_20_X],
+      compatibleRuntimes: [lambda.Runtime.NODEJS_24_X],
       description: 'Node modules layer for Battlesnake Nodejs'
     });
 
@@ -35,7 +35,7 @@ export class LambdaStack extends Construct {
       functionName: `${envs.PROJECT_NAME}-${stage}`,
       code: lambda.Code.fromAsset(path.join(__dirname, `../../dist`)),
       handler: `index.handler`,
-      runtime: lambda.Runtime.NODEJS_20_X,
+      runtime: lambda.Runtime.NODEJS_24_X,
       environment: environmentVariables,
       layers: [this.nodeModulesLayer],
       timeout: Duration.seconds(30),
