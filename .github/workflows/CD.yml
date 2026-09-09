@@ -6,7 +6,7 @@ on:
       - dev
 jobs:
   DeployToAWS:
-    environment: 
+    environment:
       name: ${{ github.ref_name }}
     runs-on: ubuntu-latest
     permissions:
@@ -14,48 +14,60 @@ jobs:
       contents: read
 
     steps:
-        - uses: actions/checkout@v3
-        - name: Setup AWS Credentials
-          uses: aws-actions/configure-aws-credentials@v2
-          with:
-            aws-region: us-west-2
-            role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/GithubActionsRole
-            role-session-name: github-action
+      - uses: actions/checkout@v4
 
-        - name: Setting stage and stack name
-          run: |
-            echo "STAGE=${{ github.ref_name }}" 
-            PROJECT_NAME=$(echo ${{ github.event.repository.name }} | sed -e 's/[-_]/ /g' | awk '{for(i=1;i<=NF;i++)sub(/./,toupper(substr($i,1,1)),$i)}1' | sed -e 's/ //g')
-            echo "PROJECT_NAME=${PROJECT_NAME}"
-            echo "STACK_NAME=${PROJECT_NAME}Stack${{github.ref_name}}"
+      - name: Set AWS Account ID
+        run: |
+          echo "AWS_ACCOUNT_ID=${{ secrets.AWS_ACCOUNT_ID_DEV }}" >> $GITHUB_ENV
 
-            echo "STACK_NAME=${PROJECT_NAME}Stack${{github.ref_name}}" >> $GITHUB_ENV
-            echo "PROJECT_NAME=${PROJECT_NAME}" >> $GITHUB_ENV
-    
-        - name: Installing Dependencies to Deploy
-          run: |
-            cd iac
-            npm i -g aws-cdk ts-node
-            npm i
-        - name: Installing Dependencies to BattleSnake
-          run: |
-            npm i
-            npm run build
-        - name: Setup envs
-          run: |
-            echo AWS_REGION=us-west-2 >> $GITHUB_ENV
-            echo AWS_ACCOUNT_ID=${{ secrets.AWS_ACCOUNT_ID }} >> $GITHUB_ENV
-            echo GITHUB_REF_NAME=${{ github.ref_name }} >> $GITHUB_ENV
+      - name: Setup AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: us-east-1
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/GithubActionsRole
+          role-session-name: github-action
 
-            echo ${{ env.AWS_REGION }}
-            echo ${{ env.AWS_ACCOUNT_ID }}
-            echo ${{ env.STACK_NAME }}
-            echo ${{ env.GITHUB_REF_NAME }}
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
 
-        - name: Deploy with CDK
-          run: |
-            cd iac
-            ts-node node_modules_adjust.ts
-            cdk synth
-            cdk deploy --require-approval never 
-       
+      - name: Setting stage and stack name
+        run: |
+          echo "STAGE=${{ github.ref_name }}"
+          PROJECT_NAME=$(echo ${{ github.event.repository.name }} | sed -e 's/[-_]/ /g' | awk '{for(i=1;i<=NF;i++)sub(/./,toupper(substr($i,1,1)),$i)}1' | sed -e 's/ //g')
+          echo "PROJECT_NAME=${PROJECT_NAME}"
+          echo "STACK_NAME=${PROJECT_NAME}Stack${{github.ref_name}}"
+
+          echo "STACK_NAME=${PROJECT_NAME}Stack${{github.ref_name}}" >> $GITHUB_ENV
+          echo "PROJECT_NAME=${PROJECT_NAME}" >> $GITHUB_ENV
+
+      - name: Installing Dependencies to Deploy
+        run: |
+          cd iac
+          npm i -g aws-cdk ts-node
+          npm i
+
+      - name: Installing Dependencies to BattleSnake
+        run: |
+          npm i
+          npm run build
+
+      - name: Setup envs
+        run: |
+          echo AWS_REGION=us-east-1 >> $GITHUB_ENV
+          echo AWS_ACCOUNT_ID=${{ env.AWS_ACCOUNT_ID }} >> $GITHUB_ENV
+          echo GITHUB_REF_NAME=${{ github.ref_name }} >> $GITHUB_ENV
+
+          echo ${{ env.AWS_REGION }}
+          echo ${{ env.AWS_ACCOUNT_ID }}
+          echo ${{ env.STACK_NAME }}
+          echo ${{ env.GITHUB_REF_NAME }}
+
+      - name: Deploy with CDK
+        run: |
+          cd iac
+          ts-node node_modules_adjust.ts
+          cdk synth
+          cdk deploy --require-approval never
