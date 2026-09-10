@@ -1,39 +1,67 @@
-import { config } from 'dotenv';
-config()
-import express, { Request, Response } from 'express';
-import ServerlessHttp from 'serverless-http';
-import { STAGE } from './enums/stage_enum';
-import { router } from './routes/snake_routes'
+// Ponte entre o AWS Lambda e a lógica da sua cobra.
+//
+// Você NÃO precisa mexer aqui. Este arquivo monta um servidor Express com as
+// quatro rotas do Battlesnake e o embrulha com `serverless-http`, que traduz
+// o evento do API Gateway em uma requisição HTTP comum.
+//
+// Rotas da API (https://docs.battlesnake.com/api):
+//   GET  /        -> aparência da cobra
+//   POST /start   -> a partida começou
+//   POST /move    -> escolha a jogada deste turno
+//   POST /end     -> a partida acabou
 
-const app = express();
+import express, { Request, Response, NextFunction } from "express";
+import serverless from "serverless-http";
+import { info, start, move, end } from "./logic";
+import { GameState } from "./models";
+
+export const app = express();
+
+// Remove o prefixo do stage (ex: /dev, /staging, /prod) se presente.
+//
+// Dependendo de como a API é exposta, o caminho pode chegar ao Express com o
+// nome do stage na frente ("/dev/move" em vez de "/move"). Sem esta
+// normalização, o POST /move não casa com nenhuma rota.
+app.use((req: Request, _res: Response, next: NextFunction) => {
+  const stagePrefixRegex = /^\/(?:dev|homolog|prod|staging)(\/.*)?\ $/;
+  const match = req.url.match(/^\/(?:dev|homolog|prod|staging)(\/.*)?$/);
+  if (match) {
+    req.url = match[1] || "/";
+  }
+  next();
+});
+
 app.use(express.json());
-app.use(router)
 
-app.post('/start', (req: Request, res: Response) => {
-    res.send("ok");
+app.get("/", (_req: Request, res: Response) => {
+  res.json(info());
 });
 
-app.post('/move', (req: Request, res: Response) => {
-    console.log(req.body);
-    const directions = ["up", "down", "left", "right"];
-    const i = Math.floor(Math.random() * directions.length);
-    const response = {
-        move: directions[i],
-        shout: `I'm moving ${directions[i]}!`
-    };
-    res.json(response);
+app.post("/start", (req: Request, res: Response) => {
+  start(req.body as GameState);
+  res.send("ok");
 });
 
-app.post('/end', (req: Request, res: Response) => {
-    res.send("ok");
+app.post("/move", (req: Request, res: Response) => {
+  res.json(move(req.body as GameState));
 });
 
-console.log('process.env.STAGE: ' + process.env.STAGE)
+app.post("/end", (req: Request, res: Response) => {
+  end(req.body as GameState);
+  res.send("ok");
+});
 
-if (process.env.STAGE === STAGE.TEST) {
-    app.listen(3000, () => {console.log('Server up and running on: http://localhost:3000 🚀')})
-} else {
-    module.exports.handler = ServerlessHttp(app)
-}
+// Qualquer outro caminho devolve as informações da cobra.
+app.use((_req: Request, res: Response) => {
+  res.json(info());
+});
 
+// Erro de parse do JSON -> 400
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+  console.error(`corpo da requisição inválido: ${err.message}`);
+  res.status(400).json({ error: err.message });
+});
 
+// Handler para a Lambda (nome configurado no Terraform/IAC)
+export const handler = serverless(app);

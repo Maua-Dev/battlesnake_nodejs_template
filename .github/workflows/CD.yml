@@ -52,6 +52,7 @@ jobs:
       - name: Installing Dependencies to BattleSnake
         run: |
           npm i
+          npm test
           npm run build
 
       - name: Setup envs
