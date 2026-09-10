@@ -18,7 +18,9 @@ import { GameState, Coord } from "./models";
 // Controla a aparência dela. Opções de cabeça, cauda e cor:
 // https://docs.battlesnake.com/guides/customizations
 export function info(): object {
-  console.log("INFO");
+  if (process.env.DEBUG === "true") {
+    console.log("INFO");
+  }
 
   return {
     apiversion: "1",
@@ -74,12 +76,41 @@ export function move(gameState: GameState): { move: string } {
     }
   }
 
-  // TODO: Passo 1 — impedir que a cobra saia do tabuleiro
-  // const boardWidth = gameState.board.width;
-  // const boardHeight = gameState.board.height;
+  // 2. Impedir que a cobra saia do tabuleiro (paredes)
+  const boardWidth = gameState.board.width;
+  const boardHeight = gameState.board.height;
 
-  // TODO: Passo 2 — impedir que a cobra bata no próprio corpo
-  // const myBody = gameState.you.body;
+  if (myHead.x + 1 >= boardWidth) {
+    isMoveSafe["right"] = false;
+  }
+  if (myHead.x - 1 < 0) {
+    isMoveSafe["left"] = false;
+  }
+  if (myHead.y + 1 >= boardHeight) {
+    isMoveSafe["up"] = false;
+  }
+  if (myHead.y - 1 < 0) {
+    isMoveSafe["down"] = false;
+  }
+
+  // 3. Impedir que a cobra bata no próprio corpo
+  const myBody = gameState.you.body;
+  if (myBody) {
+    for (const segment of myBody) {
+      if (segment.x === myHead.x + 1 && segment.y === myHead.y) {
+        isMoveSafe["right"] = false;
+      }
+      if (segment.x === myHead.x - 1 && segment.y === myHead.y) {
+        isMoveSafe["left"] = false;
+      }
+      if (segment.x === myHead.x && segment.y === myHead.y + 1) {
+        isMoveSafe["up"] = false;
+      }
+      if (segment.x === myHead.x && segment.y === myHead.y - 1) {
+        isMoveSafe["down"] = false;
+      }
+    }
+  }
 
   // TODO: Passo 3 — impedir que a cobra bata nas adversárias
   // const opponents = gameState.board.snakes;
@@ -92,7 +123,9 @@ export function move(gameState: GameState): { move: string } {
     // Escolhemos uma ao acaso entre as 4 — melhor do que travar.
     const allMoves = ["up", "down", "left", "right"];
     const fallback = allMoves[Math.floor(Math.random() * allMoves.length)];
-    console.log(`MOVE ${gameState.turn}: sem saída! emergência -> ${fallback}`);
+    if (process.env.DEBUG === "true") {
+      console.log(`MOVE ${gameState.turn}: sem saída! emergência -> ${fallback}`);
+    }
     return { move: fallback };
   }
 
@@ -102,6 +135,8 @@ export function move(gameState: GameState): { move: string } {
   // TODO: Passo 4 — ir atrás da comida em vez de sortear, para não morrer de fome
   // const food = gameState.board.food;
 
-  console.log(`MOVE ${gameState.turn}: ${nextMove}`);
+  if (process.env.DEBUG === "true") {
+    console.log(`MOVE ${gameState.turn}: ${nextMove}`);
+  }
   return { move: nextMove };
 }
