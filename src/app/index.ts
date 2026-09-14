@@ -23,8 +23,8 @@ export const app = express();
 // nome do stage na frente ("/dev/move" em vez de "/move"). Sem esta
 // normalização, o POST /move não casa com nenhuma rota.
 app.use((req: Request, _res: Response, next: NextFunction) => {
-  const stagePrefixRegex = /^\/(?:dev|homolog|prod|staging)(\/.*)?\ $/;
-  const match = req.url.match(/^\/(?:dev|homolog|prod|staging)(\/.*)?$/);
+  const stagePrefixRegex = /^\/(?:dev|homolog|prod|staging)(\/.*)?$/;
+  const match = req.url.match(stagePrefixRegex);
   if (match) {
     req.url = match[1] || "/";
   }

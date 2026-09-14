@@ -133,3 +133,6 @@ dist
 *.pem
 
 .env
+
+# saida compilada dos testes
+dist-test/
