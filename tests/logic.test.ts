@@ -7,6 +7,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { info, start, move, end } from "../src/app/logic";
+import { handler } from "../src/app/index";
 
 const DIRECTIONS = ["up", "down", "left", "right"] as const;
 
@@ -147,4 +148,59 @@ test("start e end não quebram com estado de jogo válido", () => {
 
   assert.doesNotThrow(() => start(state as any));
   assert.doesNotThrow(() => end(state as any));
+});
+
+function apiGatewayEvent(method: string, path: string, body?: any) {
+  const ehRaiz = path === "/" || path === "";
+  return {
+    resource: ehRaiz ? "/" : "/{proxy+}",
+    path,
+    httpMethod: method,
+    headers: { "Content-Type": "application/json" },
+    multiValueHeaders: {},
+    queryStringParameters: null,
+    pathParameters: ehRaiz ? null : { proxy: path.replace(/^\//, "") },
+    requestContext: { stage: "dev", path, httpMethod: method },
+    body: body === undefined ? null : JSON.stringify(body),
+    isBase64Encoded: false,
+  } as any;
+}
+
+test("GET / devolve os metadados da cobra", async () => {
+  const res = await (handler as any)(apiGatewayEvent("GET", "/"), {});
+  assert.equal(res.statusCode, 200);
+  const body = JSON.parse(res.body);
+  assert.equal(body.apiversion, "1");
+});
+
+test("POST /start responde ok", async () => {
+  const state = gameState({ x: 5, y: 4 }, { x: 4, y: 4 });
+  const res = await (handler as any)(apiGatewayEvent("POST", "/start", state), {});
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body, "ok");
+});
+
+test("POST /move responde com direção válida", async () => {
+  const state = gameState({ x: 5, y: 4 }, { x: 4, y: 4 });
+  const res = await (handler as any)(apiGatewayEvent("POST", "/move", state), {});
+  assert.equal(res.statusCode, 200);
+  const body = JSON.parse(res.body);
+  assert.ok(DIRECTIONS.includes(body.move));
+});
+
+test("POST /end responde ok", async () => {
+  const state = gameState({ x: 5, y: 4 }, { x: 4, y: 4 });
+  const res = await (handler as any)(apiGatewayEvent("POST", "/end", state), {});
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body, "ok");
+});
+
+test("rota inexistente retorna HTTP 404", async () => {
+  const res = await (handler as any)(apiGatewayEvent("GET", "/rota-inexistente"), {});
+  assert.equal(res.statusCode, 404);
+});
+
+test("método inválido em rota existente retorna HTTP 404", async () => {
+  const res = await (handler as any)(apiGatewayEvent("GET", "/move"), {});
+  assert.equal(res.statusCode, 404);
 });

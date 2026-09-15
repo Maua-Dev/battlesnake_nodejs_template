@@ -51,9 +51,9 @@ app.post("/end", (req: Request, res: Response) => {
   res.send("ok");
 });
 
-// Qualquer outro caminho devolve as informações da cobra.
+// Qualquer outro caminho ou método inexistente devolve 404 Not Found.
 app.use((_req: Request, res: Response) => {
-  res.json(info());
+  res.status(404).json({ error: "Not Found" });
 });
 
 // Erro de parse do JSON -> 400

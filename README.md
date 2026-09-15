@@ -8,7 +8,7 @@ automático: você programa, dá push, e o GitHub Actions devolve a URL da sua c
 
 ## 📦 Pré-requisitos
 
-- **Node.js 20 ou superior** — [nodejs.org/download](https://nodejs.org/en/download)
+- **Node.js 24 ou superior** — [nodejs.org/download](https://nodejs.org/en/download)
   Confira com `node --version`.
 - Noções básicas de **TypeScript**, **API** e **Lambda**
 - **Disposição, competitividade e força de vontade!**
