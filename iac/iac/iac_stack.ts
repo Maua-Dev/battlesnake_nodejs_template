@@ -52,19 +52,5 @@ export class IacStack extends Stack {
     )
     const snsAction = new SnsAction(topic)
     alarm.addAlarmAction(snsAction)
-
-    const region = environments.AWS_REGION
-    const logGroupName = `/aws/lambda/${lambdaStack.lambdaFunction.functionName}`
-    const cloudwatchLogsUrl = `https://${region}.console.aws.amazon.com/cloudwatch/home?region=${region}#logsV2:log-groups/log-group/${logGroupName.replace(/\//g, '$252F')}`
-
-    new CfnOutput(this, 'CloudWatchLogs', {
-      value: cloudwatchLogsUrl,
-      exportName: `${projectName}CloudWatchLogsValue`
-    });
-
-    new CfnOutput(this, 'LambdaConsole', {
-      value: `https://${region}.console.aws.amazon.com/lambda/home?region=${region}#/functions/${lambdaStack.lambdaFunction.functionName}?tab=code`,
-      exportName: `${projectName}LambdaConsoleValue`
-    })
   }
 }
