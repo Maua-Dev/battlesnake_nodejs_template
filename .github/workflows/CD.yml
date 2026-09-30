@@ -33,10 +33,12 @@ jobs:
         run: |
           REPO_NAME="${{ github.event.repository.name }}"
           STAGE="${{ github.ref_name }}"
-          STACK_NAME="battlesnake-${REPO_NAME}-${STAGE}"
-          PROJECT_NAME="battlesnake-${REPO_NAME}"
+          REPO_SLUG=${REPO_NAME//_/-}
+          STACK_NAME="battlesnake-${REPO_SLUG}-${STAGE}"
+          PROJECT_NAME="battlesnake-${REPO_SLUG}"
 
           echo "REPO_NAME=${REPO_NAME}" >> $GITHUB_ENV
+          echo "REPO_SLUG=${REPO_SLUG}" >> $GITHUB_ENV
           echo "STAGE=${STAGE}" >> $GITHUB_ENV
           echo "STACK_NAME=${STACK_NAME}" >> $GITHUB_ENV
           echo "PROJECT_NAME=${PROJECT_NAME}" >> $GITHUB_ENV

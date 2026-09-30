@@ -8,7 +8,8 @@ const envs = {
   AWS_ACCOUNT_ID: process.env.AWS_ACCOUNT_ID,
   AWS_REGION: process.env.AWS_REGION,
   STACK_NAME: process.env.STACK_NAME,
-  REPO_NAME: process.env.REPO_NAME
+  REPO_NAME: process.env.REPO_NAME,
+  REPO_SLUG: process.env.REPO_SLUG
 }
 
 export {envs}
