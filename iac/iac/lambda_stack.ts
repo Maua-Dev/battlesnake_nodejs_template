@@ -10,8 +10,8 @@ export class LambdaStack extends Construct {
   nodeModulesLayer: lambda.LayerVersion;
 
   constructor(scope: Construct, environmentVariables: Record<string, any>) {
-    const repoName = envs.REPO_NAME || 'local';
-    const prefix = `battlesnake-${repoName}`;
+    const repoSlug = envs.REPO_SLUG || (envs.REPO_NAME || 'local').replace(/_/g, '-');
+    const prefix = `battlesnake-${repoSlug}`;
     super(scope, `${prefix}-lambda-construct`);
 
     const githubRef = process.env.GITHUB_REF || process.env.GITHUB_REF_NAME || '';

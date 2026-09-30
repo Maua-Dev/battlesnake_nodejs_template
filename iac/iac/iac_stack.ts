@@ -28,8 +28,8 @@ export class IacStack extends Stack {
     }
 
     const stageLower = stage.toLowerCase();
-    const repoName = environments.REPO_NAME || 'local';
-    const prefix = `battlesnake-${repoName}`;
+    const repoSlug = environments.REPO_SLUG || (environments.REPO_NAME || 'local').replace(/_/g, '-');
+    const prefix = `battlesnake-${repoSlug}`;
     const projectName = environments.PROJECT_NAME || prefix;
 
     const envs = {

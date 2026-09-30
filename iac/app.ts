@@ -9,7 +9,7 @@ const app = new cdk.App()
 
 const awsAccount = envs.AWS_ACCOUNT_ID
 const awsRegion = envs.AWS_REGION
-const repoName = envs.REPO_NAME || 'local'
+const repoSlug = envs.REPO_SLUG || (envs.REPO_NAME || 'local').replace(/_/g, '-')
 
 const tags = {
   'project': 'BattlesnakeNodejs',
@@ -31,7 +31,7 @@ if (githubRef.includes('prod')) {
 }
 
 const stageLower = stage.toLowerCase()
-const stackName = envs.STACK_NAME || `battlesnake-${repoName}-${stageLower}`
+const stackName = envs.STACK_NAME || `battlesnake-${repoSlug}-${stageLower}`
 
 new IacStack(app, stackName, {
   env: {
