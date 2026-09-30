@@ -14,9 +14,9 @@ import { SnsAction } from 'aws-cdk-lib/aws-cloudwatch-actions';
 export class IacStack extends Stack {
   constructor(scope: Construct, constructId: string, props?: StackProps) {
     super(scope, constructId, props);
-    const githubRef = process.env.GITHUB_REF || '';
+    const githubRef = process.env.GITHUB_REF || process.env.GITHUB_REF_NAME || '';
 
-    let stage;
+    let stage: string;
     if (githubRef.includes('prod')) {
       stage = 'PROD';
     } else if (githubRef.includes('homolog')) {
@@ -27,6 +27,11 @@ export class IacStack extends Stack {
       stage = 'TEST';
     }
 
+    const stageLower = stage.toLowerCase();
+    const repoName = environments.REPO_NAME || 'local';
+    const prefix = `battlesnake-${repoName}`;
+    const projectName = environments.PROJECT_NAME || prefix;
+
     const envs = {
       'STAGE': stage
     };
@@ -35,13 +40,14 @@ export class IacStack extends Stack {
 
     const alarm = lambdaStack.lambdaFunction.metricInvocations({
       period: Duration.hours(6)
-    }).createAlarm(this, `${environments.PROJECT_NAME}LambdaAlarm`, {
+    }).createAlarm(this, `${prefix}-alarm`, {
+      alarmName: `${prefix}-alarm-${stageLower}`,
       threshold: 5000,
       evaluationPeriods: 1,
       comparisonOperator: ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD
     })
 
-    const topic = Topic.fromTopicArn(this, `${environments.PROJECT_NAME}Topic`,
+    const topic = Topic.fromTopicArn(this, `${prefix}Topic`,
       `arn:aws:sns:${environments.AWS_REGION}:${environments.AWS_ACCOUNT_ID}:sns-battlesnake`
     )
     const snsAction = new SnsAction(topic)
@@ -53,12 +59,12 @@ export class IacStack extends Stack {
 
     new CfnOutput(this, 'CloudWatchLogs', {
       value: cloudwatchLogsUrl,
-      exportName: `${environments.PROJECT_NAME}CloudWatchLogsValue`
+      exportName: `${projectName}CloudWatchLogsValue`
     });
 
     new CfnOutput(this, 'LambdaConsole', {
       value: `https://${region}.console.aws.amazon.com/lambda/home?region=${region}#/functions/${lambdaStack.lambdaFunction.functionName}?tab=code`,
-      exportName: `${environments.PROJECT_NAME}LambdaConsoleValue`
+      exportName: `${projectName}LambdaConsoleValue`
     })
   }
 }

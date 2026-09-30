@@ -8,8 +8,8 @@ console.log('Starting the CDK')
 const app = new cdk.App()
 
 const awsAccount = envs.AWS_ACCOUNT_ID
-const stackName = envs.STACK_NAME
 const awsRegion = envs.AWS_REGION
+const repoName = envs.REPO_NAME || 'local'
 
 const tags = {
   'project': 'BattlesnakeNodejs',
@@ -17,24 +17,28 @@ const tags = {
   'owner': 'Dev Community Maua'
 }
 
-const githubRef = process.env.GITHUB_REF || ''
+const githubRef = process.env.GITHUB_REF || process.env.GITHUB_REF_NAME || ''
 
-let stage;
+let stage: string
 if (githubRef.includes('prod')) {
-    stage = 'PROD';
+    stage = 'PROD'
 } else if (githubRef.includes('homolog')) {
-    stage = 'HOMOLOG';
+    stage = 'HOMOLOG'
 } else if (githubRef.includes('dev')) {
-    stage = 'DEV';
+    stage = 'DEV'
 } else {
-    stage = 'TEST';
+    stage = 'TEST'
 }
 
-new IacStack(app, `${stackName}-IaC-${stage}`, {
+const stageLower = stage.toLowerCase()
+const stackName = envs.STACK_NAME || `battlesnake-${repoName}-${stageLower}`
+
+new IacStack(app, stackName, {
   env: {
     region: awsRegion,
     account: awsAccount
   },
+  stackName,
   tags: tags
 })
 

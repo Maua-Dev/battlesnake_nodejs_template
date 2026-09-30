@@ -7,7 +7,8 @@ const envs = {
   PROJECT_NAME: process.env.PROJECT_NAME,
   AWS_ACCOUNT_ID: process.env.AWS_ACCOUNT_ID,
   AWS_REGION: process.env.AWS_REGION,
-  STACK_NAME: process.env.STACK_NAME
+  STACK_NAME: process.env.STACK_NAME,
+  REPO_NAME: process.env.REPO_NAME
 }
 
 export {envs}

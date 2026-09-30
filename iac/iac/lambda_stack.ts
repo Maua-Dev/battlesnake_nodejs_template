@@ -1,5 +1,6 @@
 import { Construct } from 'constructs';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as iam from 'aws-cdk-lib/aws-iam';
 import { CfnOutput, Duration } from 'aws-cdk-lib';
 import * as path from 'path';
 import { envs } from '../envs';
@@ -9,12 +10,13 @@ export class LambdaStack extends Construct {
   nodeModulesLayer: lambda.LayerVersion;
 
   constructor(scope: Construct, environmentVariables: Record<string, any>) {
-    super(scope, `${envs.STACK_NAME}`);
+    const repoName = envs.REPO_NAME || 'local';
+    const prefix = `battlesnake-${repoName}`;
+    super(scope, `${prefix}-lambda-construct`);
 
-    const projectName = envs.PROJECT_NAME;
-    const githubRef = process.env.GITHUB_REF || '';
+    const githubRef = process.env.GITHUB_REF || process.env.GITHUB_REF_NAME || '';
 
-    let stage;
+    let stage: string;
     if (githubRef.includes('prod')) {
         stage = 'PROD';
     } else if (githubRef.includes('homolog')) {
@@ -25,19 +27,39 @@ export class LambdaStack extends Construct {
         stage = 'TEST';
     }
 
-    this.nodeModulesLayer = new lambda.LayerVersion(this, `${envs.STACK_NAME}-node-modules-${stage}`, {
+    const stageLower = stage.toLowerCase();
+    const projectName = envs.PROJECT_NAME || prefix;
+    const accountId = envs.AWS_ACCOUNT_ID;
+    const boundaryArn = `arn:aws:iam::${accountId}:policy/pb-battlesnake-participant`;
+
+    const lambdaRole = new iam.Role(this, `${prefix}-role`, {
+      roleName: `${prefix}-role-${stageLower}`,
+      assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
+      managedPolicies: [
+        iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
+      ],
+      permissionsBoundary: iam.ManagedPolicy.fromManagedPolicyArn(
+        this,
+        'BattlesnakeBoundary',
+        boundaryArn,
+      ),
+    });
+
+    this.nodeModulesLayer = new lambda.LayerVersion(this, `${prefix}-layer`, {
+      layerVersionName: `${prefix}-layer-${stageLower}`,
       code: lambda.Code.fromAsset(path.join(__dirname, `../dependencies`)),
       compatibleRuntimes: [lambda.Runtime.NODEJS_24_X],
       description: 'Node modules layer for Battlesnake Nodejs'
     });
 
-    this.lambdaFunction = new lambda.Function(this, `${envs.STACK_NAME}-${stage}`, {
-      functionName: `${envs.PROJECT_NAME}-${stage}`,
+    this.lambdaFunction = new lambda.Function(this, `${prefix}-lambda`, {
+      functionName: `${prefix}-lambda-${stageLower}`,
       code: lambda.Code.fromAsset(path.join(__dirname, `../../dist`)),
       handler: `index.handler`,
       runtime: lambda.Runtime.NODEJS_24_X,
       environment: environmentVariables,
       layers: [this.nodeModulesLayer],
+      role: lambdaRole,
       timeout: Duration.seconds(30),
       memorySize: 512
     });
@@ -46,7 +68,7 @@ export class LambdaStack extends Construct {
       authType: lambda.FunctionUrlAuthType.NONE
     });
 
-    new CfnOutput(this, `${envs.STACK_NAME}UrlValue`, {
+    new CfnOutput(this, `${prefix}UrlValue`, {
       value: lambdaUrl.url,
       exportName: projectName + 'UrlValue'
     });
